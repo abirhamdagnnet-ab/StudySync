@@ -37,6 +37,12 @@ npm run build
 npm run preview
 ```
 
+## Publish the frontend with GitHub Pages
+
+The repository includes a GitHub Actions workflow that builds and publishes the frontend to `https://abirhamdagnnet-ab.github.io/StudySync/` whenever changes are pushed to `main`. In the repository, open **Settings → Pages** and set **Source** to **GitHub Actions** to enable the first deployment.
+
+GitHub Pages only hosts static files. The Express API and PostgreSQL database must be deployed separately for registration, login, saved study data, metrics, and the AI assistant to work online. Once the API is hosted, add a repository variable named `VITE_API_URL` with its public API URL ending in `/api`, and set the API's `CORS_ORIGIN` to `https://abirhamdagnnet-ab.github.io`. Keep `GEMINI_API_KEY`, database credentials, and JWT secrets on the backend host only.
+
 ## Frontend behavior
 
 - Student, teacher, and administrator route groups are role guarded. The API independently enforces authorization.

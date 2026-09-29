@@ -7,11 +7,12 @@ import { getRolePath } from "../routes/rolePaths.js";
 import { notifySuccess } from "../utils/toast.js";
 import ThemeToggle from "../components/ui/ThemeToggle.jsx";
 
+const baseUrl = import.meta.env.BASE_URL;
 const publicLinks = [
-  { label: "Home", href: "/" },
-  { label: "Features", href: "/#features" },
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "About", href: "/#about" },
+  { label: "Home", href: baseUrl },
+  { label: "Features", href: `${baseUrl}#features` },
+  { label: "How it works", href: `${baseUrl}#how-it-works` },
+  { label: "About", href: `${baseUrl}#about` },
 ];
 
 function PublicLayout() {
@@ -43,7 +44,7 @@ function PublicLayout() {
       <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
         <nav className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8" aria-label="Public navigation">
           <Link to="/" className="flex shrink-0 items-center gap-3" onClick={() => setMobileOpen(false)}>
-            <img src="/studysync-logo.png" alt="" className="size-10 rounded-xl object-cover shadow-sm shadow-indigo-600/20" />
+            <img src={`${import.meta.env.BASE_URL}studysync-logo.png`} alt="" className="size-10 rounded-xl object-cover shadow-sm shadow-indigo-600/20" />
             <span className="text-base font-extrabold tracking-tight text-slate-950">StudySync</span>
           </Link>
 

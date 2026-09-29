@@ -9,7 +9,7 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter future={{ v7_startTransition: true }}>
+        <BrowserRouter basename={import.meta.env.BASE_URL} future={{ v7_startTransition: true }}>
           <ErrorBoundary>
             <AppRoutes />
           </ErrorBoundary>

@@ -95,7 +95,7 @@ function Home() {
     <main className="overflow-hidden bg-white text-slate-900">
       <section id="home" className="relative isolate flex min-h-[500px] scroll-mt-[72px] items-center overflow-hidden bg-slate-950 md:min-h-[580px]">
         <img
-          src="/hero.avif"
+          src={`${import.meta.env.BASE_URL}hero.avif`}
           alt="Students studying together around a table"
           className="absolute inset-0 -z-20 size-full object-cover object-center"
         />
@@ -172,7 +172,7 @@ function Home() {
       </section>
 
       <section className="relative isolate overflow-hidden bg-slate-950 px-5 py-16 md:px-8 md:py-20">
-        <img src="/hero.avif" alt="" aria-hidden="true" className="absolute inset-0 -z-20 size-full object-cover object-center" />
+        <img src={`${import.meta.env.BASE_URL}hero.avif`} alt="" aria-hidden="true" className="absolute inset-0 -z-20 size-full object-cover object-center" />
         <div className="absolute inset-0 -z-10 bg-indigo-950/85" />
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto max-w-2xl text-center text-white">
@@ -204,7 +204,7 @@ function Home() {
 
       <footer className="border-t border-slate-200 bg-slate-100 px-5 py-7 md:px-8">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <Link to="/" className="inline-flex items-center gap-2.5"><img src="/studysync-logo.png" alt="" className="size-8 rounded-lg object-cover" /><span className="text-sm font-extrabold text-slate-900">StudySync</span></Link>
+          <Link to="/" className="inline-flex items-center gap-2.5"><img src={`${import.meta.env.BASE_URL}studysync-logo.png`} alt="" className="size-8 rounded-lg object-cover" /><span className="text-sm font-extrabold text-slate-900">StudySync</span></Link>
           <p className="text-xs text-slate-500">Adaptive preparation for confident learners.</p>
           <div className="flex gap-5 text-xs font-semibold text-slate-500"><Link to="/login" className="hover:text-indigo-700">Login</Link><Link to="/register" className="hover:text-indigo-700">Get Started</Link></div>
         </div>

@@ -3,7 +3,7 @@ import { notifyError } from "../utils/toast.js";
 
 const TOKEN_STORAGE_KEY = "authToken";
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000/api",
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3000/api" : "/api"),
   headers: { "Content-Type": "application/json" },
 });
 
@@ -27,7 +27,7 @@ api.interceptors.response.use(
       if (!redirectingToLogin && window.location.pathname !== "/login") {
         redirectingToLogin = true;
         notifyError("Session expired, please log in again");
-        window.location.assign("/login");
+        window.location.assign(`${import.meta.env.BASE_URL}login`);
       }
     } else if (!error.config?.suppressErrorToast) {
       const message = error.response?.data?.message || error.message || "Request failed";
