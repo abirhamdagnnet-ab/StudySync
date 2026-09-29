@@ -14,9 +14,7 @@ The public home page and authenticated dashboards are rendered from live app dat
 
 ## Run the project
 
-### 1. Configure and start the API
 
-Follow [the backend setup guide](back_end/README.md) to configure `.env`, create the database, migrate and seed it, then start the API on `http://localhost:3000`.
 
 ### 2. Configure and start the frontend
 
@@ -48,15 +46,4 @@ npm run preview
 - A rendering error boundary, not found page, and forbidden page provide recovery paths for navigation and rendering errors.
 - The student AI assistant accepts PDF, DOCX, and TXT attachments and answers questions using their readable text.
 
-## Responsive review widths
 
-The interface uses responsive Tailwind breakpoints. Review the main landing page, sign-in form, a dashboard, tables, charts, and dialogs at 375 px (mobile), 768 px (tablet), and 1440 px (desktop). On narrow screens, the dashboard navigation collapses behind the menu button; content grids stack and wide tables should remain usable without forcing page-level horizontal scrolling.
-
-## Project directories
-
-- `front_end/src/pages`: public, student, teacher, and administrator screens
-- `front_end/src/routes`: route definitions and role guards
-- `front_end/src/context`: authentication and theme state
-- `back_end/src`: API implementation
-- `back_end/db`: migrations and seed data
-- `back_end/docs`: API and data model documentation
