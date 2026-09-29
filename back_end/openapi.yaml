@@ -1,0 +1,805 @@
+openapi: 3.1.0
+info:
+  title: StudySync Learning API
+  version: 1.0.0
+  description: |
+    Student learning API with role-based access, adaptive quizzes, file-grounded AI,
+    analytics, and AI study conversations. Every operation is rooted at `/api`.
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+security:
+  - bearerAuth: []
+tags:
+  - name: Health
+  - name: Authentication
+  - name: Administration
+  - name: Subjects
+  - name: Topics
+  - name: Questions
+  - name: Classes
+  - name: Quiz
+  - name: Student Analytics
+  - name: AI Study
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Check API and database health
+      security: []
+      responses:
+        '200':
+          description: API and database are available
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthResponse' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /public/stats:
+    get:
+      tags: [Health]
+      summary: Get aggregate public learning platform counts
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a student account
+      description: Client-supplied role values are ignored; every public registration is a student.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
+      responses:
+        '201': { $ref: '#/components/responses/AuthSuccess' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Log in and receive a JWT
+      description: Invalid email and password use the same error message. Rate limited.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Credentials' }
+      responses:
+        '200': { $ref: '#/components/responses/AuthSuccess' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get the current user profile
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /admin/users:
+    get:
+      tags: [Administration]
+      summary: List users
+      description: Admin only. Responses never include password hashes.
+      x-roles: [admin]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Administration]
+      summary: Create a teacher or admin account
+      x-roles: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ManagedUser' }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /admin/dashboard/stats:
+    get:
+      tags: [Administration]
+      summary: Get aggregate dashboard counts and recent users
+      description: Admin only. Includes role totals, question/session totals, questions per topic, and recent users without password hashes.
+      x-roles: [admin]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /admin/users/{id}/status:
+    patch:
+      tags: [Administration]
+      summary: Activate or deactivate a user
+      x-roles: [admin]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_active]
+              properties:
+                is_active: { type: boolean }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /subjects:
+    get:
+      tags: [Subjects]
+      summary: List subjects
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Subjects]
+      summary: Create a subject
+      x-roles: [teacher, admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubjectInput' }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /subjects/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Subjects]
+      summary: Get a subject
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Subjects]
+      summary: Replace a subject
+      x-roles: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubjectInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Subjects]
+      summary: Delete a subject
+      x-roles: [admin]
+      responses:
+        '204': { description: Subject deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /topics:
+    get:
+      tags: [Topics]
+      summary: List topics
+      parameters:
+        - name: subject_id
+          in: query
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Topics]
+      summary: Create a topic
+      x-roles: [teacher, admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TopicInput' }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /topics/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Topics]
+      summary: Get a topic
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Topics]
+      summary: Replace a topic
+      x-roles: [admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TopicInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Topics]
+      summary: Delete a topic
+      x-roles: [admin]
+      responses:
+        '204': { description: Topic deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /topics/{id}/questions:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Questions]
+      summary: List active questions for a topic
+      description: Student responses never contain correct_answer.
+      parameters:
+        - name: difficulty
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 3 }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /questions:
+    get:
+      tags: [Questions]
+      summary: List active questions
+      description: Student responses never contain correct_answer.
+      parameters:
+        - name: difficulty
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 3 }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+    post:
+      tags: [Questions]
+      summary: Create a question
+      x-roles: [teacher, admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuestionInput' }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /questions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Questions]
+      summary: Get an active question
+      description: Student responses never contain correct_answer.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Questions]
+      summary: Replace a question
+      description: Teachers may edit only their own questions; admins may edit any question.
+      x-roles: [teacher, admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/QuestionInput' }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Questions]
+      summary: Delete a question
+      description: Teachers may delete only their own questions; admins may delete any question.
+      x-roles: [teacher, admin]
+      responses:
+        '204': { description: Question deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /teacher/classes:
+    get:
+      tags: [Classes]
+      summary: List classes
+      description: Teachers see their own classes; admins may list all classes.
+      x-roles: [teacher, admin]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Classes]
+      summary: Create a class for a subject
+      x-roles: [teacher, admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClassInput' }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /teacher/dashboard/stats:
+    get:
+      tags: [Classes]
+      summary: Get the current teacher's dashboard totals
+      description: Teacher only; totals include only classes and authored questions belonging to the authenticated teacher.
+      x-roles: [teacher]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /teacher/classes/{id}/students:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Classes]
+      summary: Add an active student to an owned class by email
+      description: Duplicate enrollment returns 409. Admins may manage any class.
+      x-roles: [teacher, admin]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Classes]
+      summary: List students in an owned class
+      description: Teachers can list only rosters for their own classes; admins can list any class roster.
+      x-roles: [teacher, admin]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /teacher/classes/{id}/students/{studentId}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+      - name: studentId
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    delete:
+      tags: [Classes]
+      summary: Remove a student from an owned class
+      x-roles: [teacher, admin]
+      responses:
+        '204': { description: Student removed }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /teacher/classes/{id}/trends:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Classes]
+      summary: Get class topic accuracy trends
+      description: Teachers may see only their own classes; admins may see any class. Topics are sorted weakest first.
+      x-roles: [teacher, admin]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /quiz/sessions:
+    post:
+      tags: [Quiz]
+      summary: Start a quiz session for a topic
+      x-roles: [student]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [topic_id]
+              properties:
+                topic_id: { oneOf: [{ type: integer, minimum: 1 }, { type: string, pattern: '^[1-9][0-9]*$' }] }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /quiz/sessions/{id}/next-question:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [Quiz]
+      summary: Get the next unanswered question
+      description: Returns a question near the current difficulty, without correct_answer, or a no-more-questions result.
+      x-roles: [student]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /quiz/sessions/{id}/answer:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Quiz]
+      summary: Submit an answer to a session question
+      x-roles: [student]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question_id, answer]
+              properties:
+                question_id: { oneOf: [{ type: integer, minimum: 1 }, { type: string, pattern: '^[1-9][0-9]*$' }] }
+                answer: {}
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /quiz/sessions/{id}/finish:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [Quiz]
+      summary: Finish a session and receive its summary
+      x-roles: [student]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /students/me/progress:
+    get:
+      tags: [Student Analytics]
+      summary: Get per-topic ability, accuracy, and daily accuracy history
+      x-roles: [student]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /students/me/weak-topics:
+    get:
+      tags: [Student Analytics]
+      summary: List weakest topics from the latest ten attempts
+      x-roles: [student]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /ai/conversations:
+    get:
+      tags: [AI Study]
+      summary: List the current student's conversations
+      x-roles: [student]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [AI Study]
+      summary: Create a conversation with an initial question
+      description: Question is limited to 1000 characters. Daily AI use is limited to 30 requests.
+      x-roles: [student]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AIConversationInput' }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /ai/conversations/{id}:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags: [AI Study]
+      summary: Get an owned conversation and its messages
+      x-roles: [student]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [AI Study]
+      summary: Delete an owned conversation and its unused attachment
+      description: Deletes the student's conversation and messages. Removes the attached file when no other conversation uses it.
+      x-roles: [student]
+      responses:
+        '204': { description: Conversation deleted }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /ai/conversations/from-file:
+    post:
+      tags: [AI Study]
+      summary: Create a conversation with an uploaded file
+      description: Student only. One PDF, DOCX, or TXT file up to 10 MiB. Readable extracted text is used to answer questions in the conversation.
+      x-roles: [student]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                title: { type: string, maxLength: 120 }
+                topic_id: { type: integer, minimum: 1 }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '413': { $ref: '#/components/responses/PayloadTooLarge' }
+        '415': { $ref: '#/components/responses/UnsupportedMediaType' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+  /ai/conversations/{id}/messages:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags: [AI Study]
+      summary: Ask a question in an owned conversation
+      description: Sends the question and conversation context to the configured Gemini model, then stores the question and generated answer.
+      x-roles: [student]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question: { type: string, minLength: 1, maxLength: 1000 }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+  /ai/explain-weak-topic/{topicId}:
+    parameters:
+      - name: topicId
+        in: path
+        required: true
+        schema: { type: integer, minimum: 1 }
+    post:
+      tags: [AI Study]
+      summary: Explain concepts behind a student's recent wrong answers
+      description: Returns a no-data message when there are no attempts; otherwise asks the configured Gemini model to explain recent mistakes with exactly two simple examples.
+      x-roles: [student]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+        '502': { $ref: '#/components/responses/BadGateway' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
+  schemas:
+    Error:
+      type: object
+      required: [success, message]
+      properties:
+        success: { const: false }
+        message: { type: string }
+    Success:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data: {}
+    HealthResponse:
+      type: object
+      properties:
+        status: { type: string, const: ok }
+        database: { type: string, const: connected }
+    Credentials:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+    ManagedUser:
+      allOf:
+        - $ref: '#/components/schemas/Credentials'
+        - type: object
+          required: [role]
+          properties:
+            role: { type: string, enum: [teacher, admin] }
+    SubjectInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: [string, 'null'] }
+    TopicInput:
+      type: object
+      required: [subject_id, name]
+      properties:
+        subject_id: { type: integer, minimum: 1 }
+        name: { type: string, minLength: 1, maxLength: 120 }
+        description: { type: [string, 'null'] }
+    QuestionInput:
+      type: object
+      required: [topic_id, prompt, options, correct_answer, difficulty, explanation]
+      properties:
+        topic_id: { type: integer, minimum: 1 }
+        prompt: { type: string, minLength: 1, maxLength: 5000 }
+        options:
+          type: array
+          minItems: 2
+          maxItems: 6
+          items: {}
+        correct_answer: {}
+        difficulty: { type: integer, minimum: 1, maximum: 3 }
+        explanation: { type: string, minLength: 1, maxLength: 10000 }
+      description: correct_answer must exactly match one option.
+    ClassInput:
+      type: object
+      required: [name, subject_id]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        subject_id: { type: integer, minimum: 1 }
+    AIConversationInput:
+      type: object
+      required: [question]
+      properties:
+        question: { type: string, minLength: 1, maxLength: 1000 }
+        attachment_id: { type: integer, minimum: 1, nullable: true }
+        topic_id: { type: integer, minimum: 1, nullable: true }
+        title: { type: string, minLength: 1, maxLength: 120 }
+  responses:
+    Success:
+      description: Successful response
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Success' }
+    AuthSuccess:
+      description: Authentication succeeded
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Success' }
+    BadRequest:
+      description: Invalid input or malformed request
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Unauthorized:
+      description: Missing or invalid Bearer token or invalid credentials
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Forbidden:
+      description: Authenticated role is not allowed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Resource not found or not owned by caller
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Conflict:
+      description: State conflict
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    TooManyRequests:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    PayloadTooLarge:
+      description: Request or upload exceeded configured size limit
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    UnsupportedMediaType:
+      description: Unsupported upload format
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    UnprocessableEntity:
+      description: File has no extractable text or cannot be read
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    BadGateway:
+      description: AI provider request failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    ServiceUnavailable:
+      description: API database or optional AI service is unavailable
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
