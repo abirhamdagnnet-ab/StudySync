@@ -3,7 +3,7 @@ import { notifyError } from "../utils/toast.js";
 
 const TOKEN_STORAGE_KEY = "authToken";
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "http://localhost:3000/api" : "/api"),
+  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? "https://studysync-93jn.onrender.com" : "/api"),
   headers: { "Content-Type": "application/json" },
 });
 
